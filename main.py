@@ -35,6 +35,7 @@ class RedditSearch:
                 match_object = SimpleNamespace()
                 match_object.title = submission.title
                 match_object.url = submission.url
+                match_object.created_utc = submission.created_utc
                 matching_submissions.append(match_object)
 
         if len(matching_submissions) > 0:
@@ -57,21 +58,7 @@ class RedditSearch:
 
 
         for submission in submission_list:
-                print(submission.title)
-                browser.open_new_tab(submission.url)
+                print(f'{submission.title}\nPosted At: {submission.created_utc}\n')
+                # browser.open_new_tab(submission.url)
 
-
-
-reddit_search = RedditSearch(secrets.client_id,
-                            secrets.client_secret,
-                            secrets.username,
-                            secrets.password,
-                            secrets.user_agent
-                    )
-
-print("Enter product flair: ")
-product_flair = input()
-
-
-reddit_search.execute_search(product_flair, 30)
 
