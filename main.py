@@ -64,8 +64,8 @@ if __name__ == "__main__":
 
     reddit = RedditSearch(secrets.client_id,
                             secrets.client_secret,
-                            secrets.username,
-                            secrets.password,
+                            secrets.reddit_username,
+                            secrets.reddit_password,
                             secrets.user_agent
                     )
 
