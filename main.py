@@ -1,64 +1,79 @@
-import praw
-from types import SimpleNamespace
-import webbrowser
+from reddit import RedditSearch
+import inquirer
 import secrets
+import scheduler
 
-class RedditSearch:
+flairs = [
+    'CPU',
+    'GPU',
+    'Monitor',
+    'Bundle',
+    'Cables',
+    'Case',
+    'Controller',
+    'Cooler',
+    'CPU',
+    'Fan',
+    'Flash Drive',
+    'Furniture',
+    'HDD',
+    'Headphones',
+    'Headset',
+    'HTPC',
+    'Keyboard',
+    'Laptop',
+    'Meta',
+    'Mic',
+    'Mod Post',
+    'Motherboard',
+    'Mouse',
+    'Mouse Pad',
+    'Networking',
+    'OS',
+    'Other',
+    'Optical Drive',
+    'Prebuilt',
+    'Printer',
+    'PSU',
+    'RAM',
+    'Speakers',
+    'SSD - Sata',
+    'SSD - M.2',
+    'VR',
+    'Webcam'
+]
 
-    def __init__(self, client_id, client_secret, username, password, user_agent):
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.username = username
-        self.password = password
-        self.user_agent = user_agent
+if __name__ == "__main__":
 
-        self.reddit = self.login()
-        self.subreddit = self.reddit.subreddit('buildapcsales')   
+    questions = [
+        inquirer.List('flair',
+                    message = 'Please select a flair',
+                    choices=flairs,
+        ),
+        inquirer.List('limit',
+                    message = "Select a limit",
+                    choices = [10, 20, 40, 100]        
+        ),
+        inquirer.List('timeline',
+                    message = 'Do you want this to be a daily task?',
+                    choices=['Yes', 'No']
+        )
+    ]
 
-    def login(self):
-        return praw.Reddit(client_id = self.client_id, 
-                        client_secret = self.client_secret,
-                        username = self.username,
-                        password = self.password,
-                        user_agent = self.user_agent
-                        )
+    answers = inquirer.prompt(questions)
 
+    reddit = RedditSearch(secrets.client_id,
+                            secrets.client_secret,
+                            secrets.username,
+                            secrets.password,
+                            secrets.user_agent
+                    )
 
-    def execute_search(self, product_flair, limit):
+    product_flair = answers["flair"]
+    reoccuring = answers["timeline"] == 'Yes'
+    limit = answers["limit"]
 
-        res = self.subreddit.new(limit = limit)
-
-        matching_submissions = []
-
-        for submission in res:
-            if submission.link_flair_text.lower() == product_flair.lower() and not submission.stickied:
-                match_object = SimpleNamespace()
-                match_object.title = submission.title
-                match_object.url = submission.url
-                match_object.created_utc = submission.created_utc
-                matching_submissions.append(match_object)
-
-        if len(matching_submissions) > 0:
-            self.openLinks(matching_submissions)
-        else:
-            print("No submission were found...")
-
-
-    def openLinks(self, submission_list):
-
-        print("Opening submission links...")
-
-        chrome_path = "C://Program Files (x86)//Google//Chrome//Application//chrome.exe"
-
-        webbrowser.register('chrome',
-            None,
-            webbrowser.BackgroundBrowser(chrome_path))
-        
-        browser = webbrowser.get('chrome')
-
-
-        for submission in submission_list:
-                print(f'{submission.title}\nPosted At: {submission.created_utc}\n')
-                # browser.open_new_tab(submission.url)
-
-
+    if not reoccuring:
+        reddit.execute_search(product_flair, limit=limit)
+    else:
+        scheduler.set_reoccuring_task(reddit.execute_search, product_flair, limit=limit)
