@@ -5,26 +5,36 @@ from datetime import datetime
 
 
 class Emailer:
-    def __init__(self, sender, receiver, user, password):
+    def __init__(self, sender, receiver, user, password, smtp_domain, smtp_port):
         self.user = user
         self.password = password
         self.sender = sender
         self.receiver = receiver
         self.messageQueue = []
+        self.smtp_domain = smtp_domain
+        self.smtp_port = smtp_port
 
-    def appendMessage(self, message_object):
+    def appendMessage(self, match_object):
 
-        time_posted = datetime.fromtimestamp(message_object.created_utc)
+        # Convert the reddit post into a dictionary which will hold
+        # the html formatting needed for the email.
+
+        time_posted = datetime.fromtimestamp(match_object.created_utc)
 
         msg = {
-            "title": f"<h2>{message_object.title}</h2>",
+            "title": f"<h2>{match_object.title}</h2>",
             "time_posted": f"<h3>Posted At: {time_posted}</h3>",
-            "url": f'<a href="{message_object.url}">{message_object.url}</a>'
+            "url": f'<a href="{match_object.url}">{match_object.url}</a>'
         }
 
         self.messageQueue.append(msg)
 
+
     def _stitchMessage(self):
+
+        # Combine all the messages in the messageQueue into
+        # a single string which will be sent via email.
+
         body = ""
 
         for msg in self.messageQueue:
@@ -32,14 +42,16 @@ class Emailer:
             body += msg["time_posted"]
             body += msg["url"]
             body += "<hr>"
-        
-        return body
-    
-    def getQueueLength(self):
 
+        return body
+
+    def getQueueLength(self):
         return len(self.messageQueue)
 
     def sendEmail(self):
+
+        """Send email via SMTP sever.
+        """
 
         body = self._stitchMessage()
 
@@ -52,9 +64,8 @@ class Emailer:
         msg['From'] = self.sender
         msg['To'] = self.receiver
 
-        with smtplib.SMTP(secrets.smtp_domain, secrets.smtp_port) as server:
+        with smtplib.SMTP(self.smtp_domain, self.smtp_port) as server:
 
             server.login(self.user, self.password)
             server.sendmail(self.sender, self.receiver, msg.as_string())
             print("Mail successfully sent")
-

@@ -1,10 +1,4 @@
 import schedule
-import smtplib
-from reddit import RedditSearch
-import inquirer
-import secrets
-
-
 
 
 
